@@ -38,6 +38,19 @@
       "codes": 0,
       "created": "16/03/2026",
       "fileName": "Firefox 147.0.1.dmg"
+    },
+    {
+      "id": "app_1773689357445",
+      "name": "du Maurier",
+      "desc": "",
+      "version": "1.0.0",
+      "category": "dev",
+      "icon": "🎯",
+      "notes": "",
+      "downloads": 0,
+      "codes": 0,
+      "created": "16/03/2026",
+      "fileName": "Daphné du Maurier.app.zip"
     }
   ],
   "codes": [
