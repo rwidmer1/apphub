@@ -416,25 +416,26 @@ tr:hover td { background: var(--surface2); }
     <!-- ══ PAGE: SETTINGS ══ -->
     <div class="page" id="page-settings">
       <div style="max-width:560px">
-        <div class="section-title" style="margin-bottom:20px">Paramètres Firebase</div>
+        <div class="section-title" style="margin-bottom:6px">Connexion GitHub</div>
+        <p style="font-size:12px;color:var(--muted2);margin-bottom:20px;line-height:1.6">Le token permet au portail de mettre à jour automatiquement votre <code>data.json</code> sur GitHub à chaque modification.</p>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px">
           <div class="form-group">
-            <label class="form-label">API Key Firebase</label>
-            <input class="form-input" type="password" id="fb-apikey" placeholder="AIzaSy...">
+            <label class="form-label">Token GitHub (ghp_...)</label>
+            <input class="form-input" type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+            <div style="font-size:11px;color:var(--muted2);margin-top:5px">Créez-le sur github.com/settings/tokens — cochez uniquement <strong>repo</strong></div>
           </div>
           <div class="form-group">
-            <label class="form-label">Project ID</label>
-            <input class="form-input" type="text" id="fb-projectid" placeholder="mon-projet-firebase">
+            <label class="form-label">Dépôt GitHub</label>
+            <input class="form-input" type="text" id="gh-repo" value="rwidmer1/apphub" placeholder="username/repo">
           </div>
-          <div class="form-group">
-            <label class="form-label">Storage Bucket</label>
-            <input class="form-input" type="text" id="fb-bucket" placeholder="mon-projet.appspot.com">
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-primary" onclick="saveGitHubConfig()">Sauvegarder</button>
+            <button class="btn btn-ghost" onclick="syncToGitHub()">↑ Sync maintenant</button>
           </div>
-          <button class="btn btn-primary" onclick="saveFirebaseConfig()">Sauvegarder la config</button>
         </div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px">
           <div class="section-title" style="margin-bottom:16px">Données locales</div>
-          <p style="font-size:12px;color:var(--muted2);margin-bottom:16px;line-height:1.6">Toutes vos apps et codes sont stockés dans le navigateur (localStorage). Pour une utilisation multi-appareils, connectez Firebase ci-dessus.</p>
+          <p style="font-size:12px;color:var(--muted2);margin-bottom:16px;line-height:1.6">Vos apps et codes sont stockés dans ce navigateur. La sync GitHub les publie pour l'app macOS.</p>
           <button class="btn btn-danger btn-sm" onclick="clearAllData()">⚠ Réinitialiser toutes les données</button>
         </div>
       </div>
@@ -841,6 +842,7 @@ function addApp() {
   closeModal('add-app');
   addActivity(`App "${name}" v${version} publiée`, 'var(--green)');
   toast(`✓ "${name}" publiée avec succès !`, 'success');
+  syncToGitHub();
   renderDashboard();
 }
 
@@ -873,6 +875,7 @@ function publishVersion() {
   closeModal('add-version');
   addActivity(`"${app?.name}" mis à jour → v${version}`, 'var(--blue)');
   toast(`Version ${version} publiée !`, 'success');
+  syncToGitHub();
   renderDashboard();
 }
 
@@ -908,6 +911,7 @@ function addCode() {
   closeModal('add-code');
   addActivity(`Code ${value} créé`, 'var(--accent)');
   toast(`Code ${value} créé !`, 'success');
+  syncToGitHub();
   renderCodes();
   updateStats();
 }
@@ -1034,16 +1038,85 @@ function toast(message, type = 'success') {
 }
 
 // ══════════════════════════════════════════
+// GITHUB API — Sync automatique data.json
+// ══════════════════════════════════════════
+function getGitHubConfig() {
+  const saved = localStorage.getItem('apphub-github');
+  return saved ? JSON.parse(saved) : { token: '', repo: 'rwidmer1/apphub', branch: 'main' };
+}
+
+async function syncToGitHub() {
+  const config = getGitHubConfig();
+  if (!config.token) {
+    toast('⚠ Configurez votre token GitHub dans Paramètres', 'error');
+    return false;
+  }
+
+  // Construit le data.json à publier
+  const data = {
+    apps: state.apps,
+    codes: state.codes
+  };
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+
+  // Récupère le SHA actuel du fichier (nécessaire pour la mise à jour)
+  let sha = null;
+  try {
+    const getRes = await fetch(
+      `https://api.github.com/repos/${config.repo}/contents/data.json`,
+      { headers: { Authorization: `token ${config.token}`, Accept: 'application/vnd.github.v3+json' } }
+    );
+    if (getRes.ok) {
+      const existing = await getRes.json();
+      sha = existing.sha;
+    }
+  } catch(e) {}
+
+  // Push le nouveau data.json
+  const body = {
+    message: `AppHub: mise à jour catalogue ${new Date().toLocaleString('fr-FR')}`,
+    content,
+    branch: config.branch
+  };
+  if (sha) body.sha = sha;
+
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${config.repo}/contents/data.json`,
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: `token ${config.token}`,
+          Accept: 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      }
+    );
+    if (res.ok) {
+      toast('✓ data.json mis à jour sur GitHub !', 'success');
+      addActivity('Catalogue synchronisé sur GitHub', 'var(--green)');
+      return true;
+    } else {
+      const err = await res.json();
+      toast(`Erreur GitHub: ${err.message}`, 'error');
+      return false;
+    }
+  } catch(e) {
+    toast('Erreur réseau lors de la sync GitHub', 'error');
+    return false;
+  }
+}
+
+// ══════════════════════════════════════════
 // SETTINGS
 // ══════════════════════════════════════════
-function saveFirebaseConfig() {
-  const config = {
-    apiKey: document.getElementById('fb-apikey').value,
-    projectId: document.getElementById('fb-projectid').value,
-    storageBucket: document.getElementById('fb-bucket').value
-  };
-  localStorage.setItem('apphub-firebase', JSON.stringify(config));
-  toast('Configuration Firebase sauvegardée !', 'success');
+function saveGitHubConfig() {
+  const token = document.getElementById('gh-token').value.trim();
+  const repo = document.getElementById('gh-repo').value.trim() || 'rwidmer1/apphub';
+  if (!token) { toast('Entrez votre token GitHub', 'error'); return; }
+  localStorage.setItem('apphub-github', JSON.stringify({ token, repo, branch: 'main' }));
+  toast('✓ Token GitHub sauvegardé !', 'success');
 }
 
 function clearAllData() {
@@ -1070,6 +1143,15 @@ function exportData() {
 loadState();
 updateStats();
 renderDashboard();
+// Charge le token GitHub si déjà sauvegardé
+const savedGH = localStorage.getItem('apphub-github');
+if (savedGH) {
+  try {
+    const gh = JSON.parse(savedGH);
+    if (document.getElementById('gh-token')) document.getElementById('gh-token').value = gh.token || '';
+    if (document.getElementById('gh-repo')) document.getElementById('gh-repo').value = gh.repo || 'rwidmer1/apphub';
+  } catch(e) {}
+}
 </script>
 </body>
 </html>
