@@ -14,5 +14,15 @@
       "fileName": "ChatGPT.dmg"
     }
   ],
-  "codes": []
+  "codes": [
+    {
+      "id": "code_1773677169460",
+      "value": "TE9S-6U62-7A58-HL78",
+      "apps": "all",
+      "expiry": "16/04/2027",
+      "created": "16/03/2026",
+      "status": "active",
+      "note": "TEST"
+    }
+  ]
 }
