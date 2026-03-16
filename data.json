@@ -27,19 +27,6 @@
       "fileName": "edraw-max_setup_full5380.dmg"
     },
     {
-      "id": "app_1773689261280",
-      "name": "FIRE FOX",
-      "desc": "",
-      "version": "1.0.0",
-      "category": "dev",
-      "icon": "🧪",
-      "notes": "",
-      "downloads": 0,
-      "codes": 0,
-      "created": "16/03/2026",
-      "fileName": "Firefox 147.0.1.dmg"
-    },
-    {
       "id": "app_1773689357445",
       "name": "du Maurier",
       "desc": "",
@@ -51,6 +38,19 @@
       "codes": 0,
       "created": "16/03/2026",
       "fileName": "Daphné du Maurier.app.zip"
+    },
+    {
+      "id": "app_1773689623817",
+      "name": "Du Maurier",
+      "desc": "",
+      "version": "1.0.0",
+      "category": "creative",
+      "icon": "💡",
+      "notes": "",
+      "downloads": 0,
+      "codes": 0,
+      "created": "16/03/2026",
+      "fileName": "Daphné du Maurier.zip"
     }
   ],
   "codes": [
