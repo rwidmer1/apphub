@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AppHub — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0d14;
+  --surface: #13131e;
+  --surface2: #1c1c2b;
+  --surface3: #232336;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --accent: #7c6aff;
+  --accent2: #a78bfa;
+  --green: #34d399;
+  --amber: #fbbf24;
+  --red: #f87171;
+  --blue: #60a5fa;
+  --text: #e2e2ef;
+  --muted: #5a5a72;
+  --muted2: #8888a8;
+  --mono: 'DM Mono', monospace;
+  --sans: 'Sora', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; min-height: 100vh; }
+
+/* ── LAYOUT ── */
+.layout { display: flex; min-height: 100vh; }
+.sidebar { width: 240px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 24px 0; position: fixed; height: 100vh; overflow-y: auto; }
+.main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ── SIDEBAR ── */
+.logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.logo-row { display: flex; align-items: center; gap: 10px; }
+.logo-box { width: 34px; height: 34px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.logo-name { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
+.logo-tag { font-family: var(--mono); font-size: 10px; color: var(--muted2); margin-top: 1px; }
+
+.nav-group { padding: 0 12px; margin-bottom: 8px; }
+.nav-group-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.1em; padding: 0 8px; margin-bottom: 4px; }
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 8px; border-radius: 8px; cursor: pointer; color: var(--muted2); font-size: 13px; transition: all 0.15s; margin-bottom: 1px; }
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: rgba(124,106,255,0.15); color: var(--accent2); }
+.nav-icon { width: 20px; text-align: center; font-size: 14px; }
+.nav-badge { margin-left: auto; background: var(--accent); color: #fff; font-size: 10px; font-family: var(--mono); padding: 1px 6px; border-radius: 10px; }
+
+.sidebar-footer { margin-top: auto; padding: 16px 20px 0; border-top: 1px solid var(--border); }
+.status-pill { display: inline-flex; align-items: center; gap: 6px; background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.2); color: var(--green); font-family: var(--mono); font-size: 10px; padding: 4px 10px; border-radius: 20px; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* ── TOPBAR ── */
+.topbar { height: 58px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; background: var(--bg); position: sticky; top: 0; z-index: 100; }
+.topbar-left h1 { font-size: 15px; font-weight: 500; }
+.topbar-left p { font-size: 11px; color: var(--muted2); margin-top: 1px; }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+
+/* ── BUTTONS ── */
+.btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; font-family: var(--sans); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #8f7fff; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(124,106,255,0.3); }
+.btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--text); }
+.btn-ghost:hover { background: var(--surface2); }
+.btn-danger { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.2); color: var(--red); }
+.btn-danger:hover { background: rgba(248,113,113,0.2); }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-icon { width: 32px; height: 32px; padding: 0; justify-content: center; border-radius: 7px; font-size: 15px; }
+
+/* ── CONTENT ── */
+.content { padding: 28px; flex: 1; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── STATS ── */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+.stat-label { font-family: var(--mono); font-size: 10px; color: var(--muted2); letter-spacing: 0.05em; margin-bottom: 10px; }
+.stat-value { font-size: 28px; font-weight: 600; letter-spacing: -0.03em; }
+.stat-sub { font-size: 11px; color: var(--muted2); margin-top: 4px; }
+.stat-trend { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; margin-top: 6px; }
+.trend-up { color: var(--green); }
+.trend-neutral { color: var(--muted2); }
+
+/* ── SECTION HEADER ── */
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.section-title { font-size: 13px; font-weight: 500; }
+.section-sub { font-size: 11px; color: var(--muted2); margin-top: 2px; }
+
+/* ── APP GRID ── */
+.apps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.app-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: all 0.2s; position: relative; overflow: hidden; }
+.app-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), var(--accent2)); opacity: 0; transition: opacity 0.2s; }
+.app-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+.app-card:hover::before { opacity: 1; }
+.app-card-top { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+.app-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+.app-info { flex: 1; min-width: 0; }
+.app-name { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+.app-desc { font-size: 12px; color: var(--muted2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.app-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.version-badge { font-family: var(--mono); font-size: 10px; background: var(--surface3); border: 1px solid var(--border); padding: 3px 8px; border-radius: 6px; color: var(--accent2); }
+.platform-badge { font-size: 10px; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.2); color: var(--blue); padding: 3px 8px; border-radius: 6px; }
+.app-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+.app-stat { text-align: center; }
+.app-stat-val { font-size: 16px; font-weight: 600; font-family: var(--mono); }
+.app-stat-label { font-size: 10px; color: var(--muted2); margin-top: 2px; }
+.app-actions { display: flex; gap: 8px; margin-top: 14px; }
+
+/* ── EMPTY STATE ── */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--muted2); }
+.empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+.empty-title { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
+.empty-desc { font-size: 13px; line-height: 1.6; margin-bottom: 20px; }
+
+/* ── CODES TABLE ── */
+.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; }
+thead { background: var(--surface2); }
+th { font-family: var(--mono); font-size: 10px; color: var(--muted2); letter-spacing: 0.06em; padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+td { padding: 13px 16px; font-size: 13px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface2); }
+.code-cell { font-family: var(--mono); font-size: 13px; letter-spacing: 0.05em; color: var(--accent2); }
+.status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 500; }
+.status-active { background: rgba(52,211,153,0.1); color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
+.status-used { background: rgba(251,191,36,0.1); color: var(--amber); border: 1px solid rgba(251,191,36,0.2); }
+.status-expired { background: rgba(248,113,113,0.1); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+
+/* ── MODAL ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 16px; width: 480px; max-width: 95vw; padding: 28px; animation: slideUp 0.2s ease; }
+@keyframes slideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.modal-title { font-size: 16px; font-weight: 600; }
+.modal-close { background: var(--surface2); border: none; color: var(--muted2); width: 30px; height: 30px; border-radius: 7px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+.modal-close:hover { color: var(--text); }
+
+/* ── FORM ── */
+.form-group { margin-bottom: 18px; }
+.form-label { display: block; font-size: 12px; font-weight: 500; color: var(--muted2); margin-bottom: 6px; }
+.form-input, .form-select, .form-textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--text); font-family: var(--sans); transition: border-color 0.15s; }
+.form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--accent); }
+.form-textarea { resize: vertical; min-height: 80px; }
+.form-select option { background: var(--surface2); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.upload-zone { border: 2px dashed var(--border2); border-radius: 10px; padding: 28px; text-align: center; cursor: pointer; transition: all 0.15s; }
+.upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); background: rgba(124,106,255,0.05); }
+.upload-icon { font-size: 28px; margin-bottom: 8px; }
+.upload-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.upload-sub { font-size: 11px; color: var(--muted2); }
+.modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; border-top: 1px solid var(--border); padding-top: 20px; }
+
+/* ── TOAST ── */
+.toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+.toast { background: var(--surface); border: 1px solid var(--border2); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; min-width: 260px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); animation: toastIn 0.2s ease; }
+@keyframes toastIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+.toast-success { border-color: rgba(52,211,153,0.3); }
+.toast-error { border-color: rgba(248,113,113,0.3); }
+.toast-icon { font-size: 16px; }
+
+/* ── ACTIVITY ── */
+.activity-list { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.activity-item { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.activity-item:last-child { border-bottom: none; }
+.activity-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.activity-text { flex: 1; font-size: 13px; }
+.activity-time { font-family: var(--mono); font-size: 10px; color: var(--muted2); }
+
+/* ── ICON PICKER ── */
+.icon-picker { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin-top: 8px; }
+.icon-opt { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; background: var(--surface3); border: 1px solid transparent; transition: all 0.1s; }
+.icon-opt:hover, .icon-opt.selected { border-color: var(--accent); background: rgba(124,106,255,0.15); }
+
+/* ── PROGRESS ── */
+.progress-bar { height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; margin-top: 8px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; transition: width 0.3s; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-row">
+      <div class="logo-box">📦</div>
+      <div>
+        <div class="logo-name">AppHub</div>
+        <div class="logo-tag">admin portal v1.0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">GÉNÉRAL</div>
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <span class="nav-icon">◉</span> Tableau de bord
+    </div>
+    <div class="nav-item" onclick="showPage('apps')">
+      <span class="nav-icon">⊞</span> Mes apps
+      <span class="nav-badge" id="apps-count">0</span>
+    </div>
+    <div class="nav-item" onclick="showPage('versions')">
+      <span class="nav-icon">↑</span> Versions
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">ACCÈS</div>
+    <div class="nav-item" onclick="showPage('codes')">
+      <span class="nav-icon">⌗</span> Codes d'accès
+      <span class="nav-badge" id="codes-count">0</span>
+    </div>
+    <div class="nav-item" onclick="showPage('users')">
+      <span class="nav-icon">◎</span> Utilisateurs
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">SYSTÈME</div>
+    <div class="nav-item" onclick="showPage('settings')">
+      <span class="nav-icon">⚙</span> Paramètres
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="status-pill">
+      <span class="status-dot"></span>
+      Système actif
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:10px;font-family:var(--mono);">
+      Firebase: <span style="color:var(--green)">connecté</span>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1 id="page-title">Tableau de bord</h1>
+      <p id="page-sub">Vue d'ensemble de votre plateforme</p>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-sm" onclick="exportData()">⬇ Exporter</button>
+      <button class="btn btn-primary btn-sm" onclick="openModal('add-app')">＋ Nouvelle app</button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ══ PAGE: DASHBOARD ══ -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">APPS PUBLIÉES</div>
+          <div class="stat-value" id="stat-apps" style="color:var(--accent2)">0</div>
+          <div class="stat-sub">applications macOS</div>
+          <div class="stat-trend trend-neutral">— aucune encore</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">CODES ACTIFS</div>
+          <div class="stat-value" id="stat-codes" style="color:var(--green)">0</div>
+          <div class="stat-sub">codes disponibles</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">TÉLÉCHARGEMENTS</div>
+          <div class="stat-value" id="stat-downloads" style="color:var(--blue)">0</div>
+          <div class="stat-sub">total toutes apps</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">UTILISATEURS</div>
+          <div class="stat-value" id="stat-users" style="color:var(--amber)">0</div>
+          <div class="stat-sub">codes utilisés</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <div>
+          <div class="section-title">Apps récentes</div>
+          <div class="section-sub">Dernières apps publiées</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('apps')">Voir tout →</button>
+      </div>
+
+      <div id="dashboard-apps-list">
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <div class="empty-title">Aucune app publiée</div>
+          <div class="empty-desc">Commencez par ajouter votre première app macOS.</div>
+          <button class="btn btn-primary" onclick="openModal('add-app')">＋ Ajouter une app</button>
+        </div>
+      </div>
+
+      <div class="section-header" style="margin-top:32px">
+        <div>
+          <div class="section-title">Activité récente</div>
+        </div>
+      </div>
+      <div class="activity-list" id="activity-list">
+        <div class="activity-item">
+          <div class="activity-dot" style="background:var(--accent)"></div>
+          <div class="activity-text">AppHub Admin démarré</div>
+          <div class="activity-time">maintenant</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: APPS ══ -->
+    <div class="page" id="page-apps">
+      <div class="section-header" style="margin-bottom:20px">
+        <div>
+          <div class="section-title">Toutes les apps</div>
+          <div class="section-sub" id="apps-subtitle">0 application(s) macOS</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('add-app')">＋ Nouvelle app</button>
+      </div>
+      <div class="apps-grid" id="apps-grid">
+        <div class="empty-state" style="grid-column:1/-1">
+          <div class="empty-icon">🗂</div>
+          <div class="empty-title">Aucune app</div>
+          <div class="empty-desc">Ajoutez votre première application macOS.</div>
+          <button class="btn btn-primary" onclick="openModal('add-app')">＋ Ajouter</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: VERSIONS ══ -->
+    <div class="page" id="page-versions">
+      <div class="section-header" style="margin-bottom:20px">
+        <div>
+          <div class="section-title">Historique des versions</div>
+          <div class="section-sub">Toutes les mises à jour publiées</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('add-version')">↑ Nouvelle version</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>APPLICATION</th>
+              <th>VERSION</th>
+              <th>DATE</th>
+              <th>NOTES</th>
+              <th>STATUT</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="versions-tbody">
+            <tr><td colspan="6" style="text-align:center;color:var(--muted2);padding:40px">Aucune version publiée</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: CODES ══ -->
+    <div class="page" id="page-codes">
+      <div class="section-header" style="margin-bottom:20px">
+        <div>
+          <div class="section-title">Codes d'accès</div>
+          <div class="section-sub" id="codes-subtitle">0 code(s) générés</div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-ghost btn-sm" onclick="openModal('bulk-codes')">⊕ Lot de codes</button>
+          <button class="btn btn-primary" onclick="openModal('add-code')">＋ Nouveau code</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>CODE</th>
+              <th>APP(S) AUTORISÉE(S)</th>
+              <th>CRÉÉ LE</th>
+              <th>EXPIRE LE</th>
+              <th>STATUT</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="codes-tbody">
+            <tr><td colspan="6" style="text-align:center;color:var(--muted2);padding:40px">Aucun code généré</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: USERS ══ -->
+    <div class="page" id="page-users">
+      <div class="section-header" style="margin-bottom:20px">
+        <div>
+          <div class="section-title">Utilisateurs</div>
+          <div class="section-sub">Personnes ayant utilisé un code d'accès</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>CODE UTILISÉ</th><th>DATE D'ACCÈS</th><th>APP TÉLÉCHARGÉE</th><th>ACTIONS</th></tr>
+          </thead>
+          <tbody id="users-tbody">
+            <tr><td colspan="4" style="text-align:center;color:var(--muted2);padding:40px">Aucun utilisateur pour le moment</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: SETTINGS ══ -->
+    <div class="page" id="page-settings">
+      <div style="max-width:560px">
+        <div class="section-title" style="margin-bottom:20px">Paramètres Firebase</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px">
+          <div class="form-group">
+            <label class="form-label">API Key Firebase</label>
+            <input class="form-input" type="password" id="fb-apikey" placeholder="AIzaSy...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Project ID</label>
+            <input class="form-input" type="text" id="fb-projectid" placeholder="mon-projet-firebase">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Storage Bucket</label>
+            <input class="form-input" type="text" id="fb-bucket" placeholder="mon-projet.appspot.com">
+          </div>
+          <button class="btn btn-primary" onclick="saveFirebaseConfig()">Sauvegarder la config</button>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px">
+          <div class="section-title" style="margin-bottom:16px">Données locales</div>
+          <p style="font-size:12px;color:var(--muted2);margin-bottom:16px;line-height:1.6">Toutes vos apps et codes sont stockés dans le navigateur (localStorage). Pour une utilisation multi-appareils, connectez Firebase ci-dessus.</p>
+          <button class="btn btn-danger btn-sm" onclick="clearAllData()">⚠ Réinitialiser toutes les données</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+</div>
+
+<!-- ══ MODALS ══ -->
+
+<!-- Modal: Ajouter une app -->
+<div class="modal-overlay" id="modal-add-app">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Nouvelle application</div>
+      <button class="modal-close" onclick="closeModal('add-app')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nom de l'app</label>
+      <input class="form-input" id="app-name" placeholder="ex: MonApp Pro">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description courte</label>
+      <input class="form-input" id="app-desc" placeholder="ex: Gestionnaire de fichiers avancé">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Version initiale</label>
+        <input class="form-input" id="app-version" placeholder="1.0.0" value="1.0.0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Catégorie</label>
+        <select class="form-select" id="app-category">
+          <option value="productivity">Productivité</option>
+          <option value="utility">Utilitaire</option>
+          <option value="creative">Créatif</option>
+          <option value="dev">Développement</option>
+          <option value="other">Autre</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Icône</label>
+      <div class="icon-picker" id="icon-picker">
+        <div class="icon-opt selected" data-icon="🚀" onclick="selectIcon(this)">🚀</div>
+        <div class="icon-opt" data-icon="⚡" onclick="selectIcon(this)">⚡</div>
+        <div class="icon-opt" data-icon="🎯" onclick="selectIcon(this)">🎯</div>
+        <div class="icon-opt" data-icon="🛠" onclick="selectIcon(this)">🛠</div>
+        <div class="icon-opt" data-icon="📊" onclick="selectIcon(this)">📊</div>
+        <div class="icon-opt" data-icon="🎨" onclick="selectIcon(this)">🎨</div>
+        <div class="icon-opt" data-icon="📝" onclick="selectIcon(this)">📝</div>
+        <div class="icon-opt" data-icon="🔐" onclick="selectIcon(this)">🔐</div>
+        <div class="icon-opt" data-icon="📡" onclick="selectIcon(this)">📡</div>
+        <div class="icon-opt" data-icon="🧪" onclick="selectIcon(this)">🧪</div>
+        <div class="icon-opt" data-icon="💡" onclick="selectIcon(this)">💡</div>
+        <div class="icon-opt" data-icon="🎮" onclick="selectIcon(this)">🎮</div>
+        <div class="icon-opt" data-icon="📦" onclick="selectIcon(this)">📦</div>
+        <div class="icon-opt" data-icon="🌐" onclick="selectIcon(this)">🌐</div>
+        <div class="icon-opt" data-icon="🔧" onclick="selectIcon(this)">🔧</div>
+        <div class="icon-opt" data-icon="✨" onclick="selectIcon(this)">✨</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Fichier app (.zip ou .dmg)</label>
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)">
+        <input type="file" id="file-input" accept=".zip,.dmg,.app" style="display:none" onchange="handleFileSelect(event)">
+        <div class="upload-icon">📁</div>
+        <div class="upload-title" id="upload-title">Glisser le .zip / .dmg ici</div>
+        <div class="upload-sub" id="upload-sub">ou cliquer pour parcourir</div>
+        <div class="progress-bar" id="upload-progress" style="display:none;margin-top:10px">
+          <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes de version</label>
+      <textarea class="form-textarea" id="app-notes" placeholder="Quoi de neuf dans cette version ?"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('add-app')">Annuler</button>
+      <button class="btn btn-primary" onclick="addApp()">Publier l'app</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Ajouter un code -->
+<div class="modal-overlay" id="modal-add-code">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Nouveau code d'accès</div>
+      <button class="modal-close" onclick="closeModal('add-code')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Code personnalisé (optionnel)</label>
+      <div style="display:flex;gap:8px">
+        <input class="form-input" id="code-value" placeholder="Laisser vide pour générer automatiquement">
+        <button class="btn btn-ghost btn-sm" style="flex-shrink:0" onclick="generateCode()">🎲 Générer</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Apps autorisées</label>
+      <select class="form-select" id="code-apps" multiple style="height:100px">
+        <option value="all" selected>Toutes les apps</option>
+      </select>
+      <div style="font-size:11px;color:var(--muted2);margin-top:4px">Ctrl+clic pour sélection multiple</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Date d'expiration</label>
+        <input class="form-input" type="date" id="code-expiry">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nombre max d'utilisations</label>
+        <input class="form-input" type="number" id="code-uses" placeholder="Illimité" min="1">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Note (pour vous)</label>
+      <input class="form-input" id="code-note" placeholder="ex: Code pour Jean, expire fin janvier">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('add-code')">Annuler</button>
+      <button class="btn btn-primary" onclick="addCode()">Créer le code</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Lot de codes -->
+<div class="modal-overlay" id="modal-bulk-codes">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Générer un lot de codes</div>
+      <button class="modal-close" onclick="closeModal('bulk-codes')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nombre de codes</label>
+        <input class="form-input" type="number" id="bulk-count" value="5" min="1" max="100">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Expire dans</label>
+        <select class="form-select" id="bulk-expiry">
+          <option value="7">7 jours</option>
+          <option value="30" selected>30 jours</option>
+          <option value="90">90 jours</option>
+          <option value="365">1 an</option>
+          <option value="">Jamais</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('bulk-codes')">Annuler</button>
+      <button class="btn btn-primary" onclick="generateBulkCodes()">Générer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nouvelle version -->
+<div class="modal-overlay" id="modal-add-version">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Publier une mise à jour</div>
+      <button class="modal-close" onclick="closeModal('add-version')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Application</label>
+      <select class="form-select" id="version-app">
+        <option value="">Sélectionner une app...</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nouvelle version</label>
+      <input class="form-input" id="version-number" placeholder="ex: 1.2.0">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes de mise à jour</label>
+      <textarea class="form-textarea" id="version-notes" placeholder="Quoi de neuf ?"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nouveau fichier .zip / .dmg</label>
+      <div class="upload-zone" onclick="document.getElementById('version-file').click()">
+        <input type="file" id="version-file" accept=".zip,.dmg" style="display:none" onchange="handleVersionFile(event)">
+        <div class="upload-icon">📁</div>
+        <div class="upload-title" id="version-file-title">Glisser le fichier ici</div>
+        <div class="upload-sub">ou cliquer pour parcourir</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('add-version')">Annuler</button>
+      <button class="btn btn-primary" onclick="publishVersion()">Publier la mise à jour</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let state = {
+  apps: [],
+  codes: [],
+  versions: [],
+  users: [],
+  selectedIcon: '🚀',
+  selectedFile: null,
+  selectedVersionFile: null
+};
+
+// Load from localStorage
+function loadState() {
+  const saved = localStorage.getItem('apphub-data');
+  if (saved) {
+    try { state = { ...state, ...JSON.parse(saved) }; } catch(e) {}
+  }
+}
+
+function saveState() {
+  const toSave = { apps: state.apps, codes: state.codes, versions: state.versions, users: state.users };
+  localStorage.setItem('apphub-data', JSON.stringify(toSave));
+}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+const pageTitles = {
+  dashboard: ['Tableau de bord', 'Vue d\'ensemble de votre plateforme'],
+  apps: ['Mes applications', 'Gérer vos apps macOS'],
+  versions: ['Versions', 'Historique des mises à jour'],
+  codes: ['Codes d\'accès', 'Gérer les codes de distribution'],
+  users: ['Utilisateurs', 'Personnes ayant un accès'],
+  settings: ['Paramètres', 'Configuration Firebase et données']
+};
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelector(`[onclick="showPage('${name}')"]`).classList.add('active');
+  const [title, sub] = pageTitles[name] || [name, ''];
+  document.getElementById('page-title').textContent = title;
+  document.getElementById('page-sub').textContent = sub;
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'apps') renderApps();
+  if (name === 'codes') renderCodes();
+  if (name === 'versions') renderVersions();
+}
+
+// ══════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════
+function updateStats() {
+  document.getElementById('stat-apps').textContent = state.apps.length;
+  document.getElementById('stat-codes').textContent = state.codes.filter(c => c.status === 'active').length;
+  document.getElementById('stat-downloads').textContent = state.apps.reduce((a, b) => a + (b.downloads || 0), 0);
+  document.getElementById('stat-users').textContent = state.users.length;
+  document.getElementById('apps-count').textContent = state.apps.length;
+  document.getElementById('codes-count').textContent = state.codes.filter(c => c.status === 'active').length;
+  document.getElementById('apps-subtitle').textContent = `${state.apps.length} application(s) macOS`;
+  document.getElementById('codes-subtitle').textContent = `${state.codes.length} code(s) générés`;
+}
+
+const iconColors = {
+  productivity: 'background:#E6F1FB', utility: 'background:#EAF3DE',
+  creative: 'background:#FAEEDA', dev: 'background:#EEEDFE', other: 'background:#F1EFE8'
+};
+
+function renderDashboard() {
+  updateStats();
+  const container = document.getElementById('dashboard-apps-list');
+  if (state.apps.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">Aucune app publiée</div><div class="empty-desc">Commencez par ajouter votre première app macOS.</div><button class="btn btn-primary" onclick="openModal('add-app')">＋ Ajouter une app</button></div>`;
+    return;
+  }
+  const recent = [...state.apps].slice(-3).reverse();
+  container.innerHTML = `<div class="apps-grid">${recent.map(appCard).join('')}</div>`;
+}
+
+function renderApps() {
+  updateStats();
+  const grid = document.getElementById('apps-grid');
+  if (state.apps.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🗂</div><div class="empty-title">Aucune app</div><div class="empty-desc">Ajoutez votre première application macOS.</div><button class="btn btn-primary" onclick="openModal('add-app')">＋ Ajouter</button></div>`;
+    return;
+  }
+  grid.innerHTML = state.apps.map(appCard).join('');
+}
+
+function appCard(app) {
+  const color = iconColors[app.category] || iconColors.other;
+  return `
+  <div class="app-card">
+    <div class="app-card-top">
+      <div class="app-icon" style="${color};border-radius:12px">${app.icon}</div>
+      <div class="app-info">
+        <div class="app-name">${app.name}</div>
+        <div class="app-desc">${app.desc}</div>
+        <div class="app-meta" style="margin-top:6px">
+          <span class="version-badge">v${app.version}</span>
+          <span class="platform-badge">macOS</span>
+        </div>
+      </div>
+    </div>
+    <div class="app-stats">
+      <div class="app-stat">
+        <div class="app-stat-val" style="color:var(--blue)">${app.downloads || 0}</div>
+        <div class="app-stat-label">téléchargements</div>
+      </div>
+      <div class="app-stat">
+        <div class="app-stat-val" style="color:var(--green)">${app.codes || 0}</div>
+        <div class="app-stat-label">codes actifs</div>
+      </div>
+    </div>
+    <div class="app-actions">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openUpdateModal('${app.id}')">↑ Mettre à jour</button>
+      <button class="btn btn-ghost btn-sm btn-icon" onclick="copyDownloadLink('${app.id}')" title="Copier le lien">🔗</button>
+      <button class="btn btn-danger btn-sm btn-icon" onclick="deleteApp('${app.id}')" title="Supprimer">✕</button>
+    </div>
+  </div>`;
+}
+
+function renderCodes() {
+  updateStats();
+  const tbody = document.getElementById('codes-tbody');
+  // Populate app select in add-code modal
+  const sel = document.getElementById('code-apps');
+  sel.innerHTML = '<option value="all" selected>Toutes les apps</option>' +
+    state.apps.map(a => `<option value="${a.id}">${a.icon} ${a.name}</option>`).join('');
+
+  if (state.codes.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted2);padding:40px">Aucun code généré</td></tr>';
+    return;
+  }
+  tbody.innerHTML = state.codes.map(code => {
+    const statusClass = { active: 'status-active', used: 'status-used', expired: 'status-expired' }[code.status] || 'status-active';
+    const statusLabel = { active: '● Actif', used: '◐ Utilisé', expired: '○ Expiré' }[code.status] || 'Actif';
+    const appLabel = code.apps === 'all' ? 'Toutes les apps' : (state.apps.find(a => a.id === code.apps)?.name || code.apps);
+    return `<tr>
+      <td class="code-cell">${code.value}</td>
+      <td>${appLabel}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--muted2)">${code.created}</td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--muted2)">${code.expiry || '—'}</td>
+      <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="copyCode('${code.value}')">📋</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCode('${code.id}')">✕</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderVersions() {
+  const tbody = document.getElementById('versions-tbody');
+  const vsel = document.getElementById('version-app');
+  vsel.innerHTML = '<option value="">Sélectionner une app...</option>' +
+    state.apps.map(a => `<option value="${a.id}">${a.icon} ${a.name}</option>`).join('');
+  if (state.versions.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted2);padding:40px">Aucune version publiée</td></tr>';
+    return;
+  }
+  tbody.innerHTML = [...state.versions].reverse().map(v => {
+    const app = state.apps.find(a => a.id === v.appId);
+    return `<tr>
+      <td>${app ? `${app.icon} ${app.name}` : 'App supprimée'}</td>
+      <td><span class="version-badge">v${v.version}</span></td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--muted2)">${v.date}</td>
+      <td style="color:var(--muted2);font-size:12px">${v.notes || '—'}</td>
+      <td><span class="status-badge status-active">● Actif</span></td>
+      <td><button class="btn btn-ghost btn-sm">📋 Détails</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// APPS
+// ══════════════════════════════════════════
+function addApp() {
+  const name = document.getElementById('app-name').value.trim();
+  const desc = document.getElementById('app-desc').value.trim();
+  const version = document.getElementById('app-version').value.trim() || '1.0.0';
+  const category = document.getElementById('app-category').value;
+  const notes = document.getElementById('app-notes').value.trim();
+  if (!name) { toast('Entrez un nom pour l\'app', 'error'); return; }
+
+  const app = {
+    id: 'app_' + Date.now(),
+    name, desc, version, category,
+    icon: state.selectedIcon,
+    notes,
+    downloads: 0,
+    codes: 0,
+    created: new Date().toLocaleDateString('fr-FR'),
+    fileName: state.selectedFile?.name || null
+  };
+
+  state.apps.push(app);
+  state.versions.push({ id: 'v_' + Date.now(), appId: app.id, version, notes, date: app.created, fileName: app.fileName });
+  saveState();
+  closeModal('add-app');
+  addActivity(`App "${name}" v${version} publiée`, 'var(--green)');
+  toast(`✓ "${name}" publiée avec succès !`, 'success');
+  renderDashboard();
+}
+
+function deleteApp(id) {
+  if (!confirm('Supprimer cette app ? Cette action est irréversible.')) return;
+  const app = state.apps.find(a => a.id === id);
+  state.apps = state.apps.filter(a => a.id !== id);
+  saveState();
+  toast(`"${app?.name}" supprimée`, 'success');
+  renderApps();
+  renderDashboard();
+}
+
+function openUpdateModal(appId) {
+  renderVersions();
+  const app = state.apps.find(a => a.id === appId);
+  if (app) document.getElementById('version-app').value = appId;
+  openModal('add-version');
+}
+
+function publishVersion() {
+  const appId = document.getElementById('version-app').value;
+  const version = document.getElementById('version-number').value.trim();
+  const notes = document.getElementById('version-notes').value.trim();
+  if (!appId || !version) { toast('Sélectionner une app et entrer un numéro de version', 'error'); return; }
+  const app = state.apps.find(a => a.id === appId);
+  if (app) app.version = version;
+  state.versions.push({ id: 'v_' + Date.now(), appId, version, notes, date: new Date().toLocaleDateString('fr-FR') });
+  saveState();
+  closeModal('add-version');
+  addActivity(`"${app?.name}" mis à jour → v${version}`, 'var(--blue)');
+  toast(`Version ${version} publiée !`, 'success');
+  renderDashboard();
+}
+
+// ══════════════════════════════════════════
+// CODES
+// ══════════════════════════════════════════
+function generateCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 4; i++) {
+    if (i > 0) code += '-';
+    for (let j = 0; j < 4; j++) code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  document.getElementById('code-value').value = code;
+}
+
+function addCode() {
+  let value = document.getElementById('code-value').value.trim().toUpperCase();
+  if (!value) { generateCode(); value = document.getElementById('code-value').value; }
+  if (state.codes.find(c => c.value === value)) { toast('Ce code existe déjà', 'error'); return; }
+  const apps = document.getElementById('code-apps').value;
+  const expiry = document.getElementById('code-expiry').value;
+  const note = document.getElementById('code-note').value.trim();
+  const code = {
+    id: 'code_' + Date.now(),
+    value, apps: apps || 'all',
+    expiry: expiry ? new Date(expiry).toLocaleDateString('fr-FR') : null,
+    created: new Date().toLocaleDateString('fr-FR'),
+    status: 'active', note
+  };
+  state.codes.push(code);
+  saveState();
+  closeModal('add-code');
+  addActivity(`Code ${value} créé`, 'var(--accent)');
+  toast(`Code ${value} créé !`, 'success');
+  renderCodes();
+  updateStats();
+}
+
+function generateBulkCodes() {
+  const count = parseInt(document.getElementById('bulk-count').value) || 5;
+  const days = document.getElementById('bulk-expiry').value;
+  let created = 0;
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  for (let i = 0; i < count; i++) {
+    let v = '';
+    for (let s = 0; s < 4; s++) { if (s > 0) v += '-'; for (let j = 0; j < 4; j++) v += chars[Math.floor(Math.random() * chars.length)]; }
+    if (!state.codes.find(c => c.value === v)) {
+      let expiry = null;
+      if (days) { const d = new Date(); d.setDate(d.getDate() + parseInt(days)); expiry = d.toLocaleDateString('fr-FR'); }
+      state.codes.push({ id: 'code_' + Date.now() + i, value: v, apps: 'all', expiry, created: new Date().toLocaleDateString('fr-FR'), status: 'active' });
+      created++;
+    }
+  }
+  saveState();
+  closeModal('bulk-codes');
+  toast(`${created} codes créés !`, 'success');
+  renderCodes();
+  updateStats();
+}
+
+function deleteCode(id) {
+  const code = state.codes.find(c => c.id === id);
+  state.codes = state.codes.filter(c => c.id !== id);
+  saveState();
+  toast(`Code ${code?.value} supprimé`, 'success');
+  renderCodes();
+}
+
+function copyCode(value) {
+  navigator.clipboard.writeText(value).then(() => toast(`Code ${value} copié !`, 'success'));
+}
+
+function copyDownloadLink(appId) {
+  const url = `${window.location.origin}?app=${appId}`;
+  navigator.clipboard.writeText(url).then(() => toast('Lien copié !', 'success'));
+}
+
+// ══════════════════════════════════════════
+// FILE HANDLING
+// ══════════════════════════════════════════
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) {
+    state.selectedFile = file;
+    document.getElementById('upload-title').textContent = '✓ ' + file.name;
+    document.getElementById('upload-sub').textContent = formatSize(file.size);
+  }
+}
+function handleVersionFile(e) {
+  const file = e.target.files[0];
+  if (file) {
+    state.selectedVersionFile = file;
+    document.getElementById('version-file-title').textContent = '✓ ' + file.name;
+  }
+}
+function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('dragover'); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) { state.selectedFile = file; document.getElementById('upload-title').textContent = '✓ ' + file.name; document.getElementById('upload-sub').textContent = formatSize(file.size); }
+}
+function formatSize(bytes) {
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/(1024*1024)).toFixed(1) + ' MB';
+}
+
+// ══════════════════════════════════════════
+// ICON PICKER
+// ══════════════════════════════════════════
+function selectIcon(el) {
+  document.querySelectorAll('.icon-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  state.selectedIcon = el.dataset.icon;
+}
+
+// ══════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════
+function openModal(name) {
+  if (name === 'add-code') { renderCodes(); generateCode(); }
+  if (name === 'add-version') renderVersions();
+  document.getElementById('modal-' + name).classList.add('open');
+}
+function closeModal(name) {
+  document.getElementById('modal-' + name).classList.remove('open');
+}
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+});
+
+// ══════════════════════════════════════════
+// ACTIVITY LOG
+// ══════════════════════════════════════════
+function addActivity(text, color = 'var(--accent)') {
+  const list = document.getElementById('activity-list');
+  const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  const item = document.createElement('div');
+  item.className = 'activity-item';
+  item.innerHTML = `<div class="activity-dot" style="background:${color}"></div><div class="activity-text">${text}</div><div class="activity-time">${time}</div>`;
+  list.insertBefore(item, list.firstChild);
+  if (list.children.length > 10) list.removeChild(list.lastChild);
+}
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+function toast(message, type = 'success') {
+  const container = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.innerHTML = `<span class="toast-icon">${type === 'success' ? '✓' : '✕'}</span>${message}`;
+  container.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(20px)'; t.style.transition = 'all 0.3s'; setTimeout(() => t.remove(), 300); }, 3000);
+}
+
+// ══════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════
+function saveFirebaseConfig() {
+  const config = {
+    apiKey: document.getElementById('fb-apikey').value,
+    projectId: document.getElementById('fb-projectid').value,
+    storageBucket: document.getElementById('fb-bucket').value
+  };
+  localStorage.setItem('apphub-firebase', JSON.stringify(config));
+  toast('Configuration Firebase sauvegardée !', 'success');
+}
+
+function clearAllData() {
+  if (!confirm('⚠ Supprimer TOUTES les données (apps, codes, versions) ? Irréversible.')) return;
+  localStorage.removeItem('apphub-data');
+  state.apps = []; state.codes = []; state.versions = []; state.users = [];
+  renderDashboard();
+  toast('Données réinitialisées', 'success');
+}
+
+function exportData() {
+  const data = JSON.stringify({ apps: state.apps, codes: state.codes, versions: state.versions }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `apphub-export-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  toast('Export téléchargé !', 'success');
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+loadState();
+updateStats();
+renderDashboard();
+</script>
+</body>
+</html>
