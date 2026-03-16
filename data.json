@@ -1,26 +1,18 @@
 {
   "apps": [
     {
-      "id": "app_exemple",
-      "name": "Mon App Exemple",
-      "desc": "Une app de démonstration",
+      "id": "app_1773676794250",
+      "name": "Mon test",
+      "desc": "Test",
       "version": "1.0.0",
-      "icon": "🚀",
-      "category": "utility",
+      "category": "productivity",
+      "icon": "🎮",
+      "notes": "",
       "downloads": 0,
-      "fileName": "MonApp.zip",
-      "notes": "Première version de l'app.",
-      "created": "16/03/2026"
+      "codes": 0,
+      "created": "16/03/2026",
+      "fileName": "ChatGPT.dmg"
     }
   ],
-  "codes": [
-    {
-      "id": "code_001",
-      "value": "TEST-1234-ABCD",
-      "apps": "all",
-      "expiry": null,
-      "status": "active",
-      "created": "16/03/2026"
-    }
-  ]
+  "codes": []
 }
