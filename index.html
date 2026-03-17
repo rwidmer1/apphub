@@ -815,15 +815,92 @@ function renderVersions() {
 }
 
 // ══════════════════════════════════════════
+// GITHUB RELEASES — Upload fichier binaire
+// ══════════════════════════════════════════
+async function uploadToRelease(file) {
+  const config = getGitHubConfig();
+  if (!config.token) { toast('Configurez votre token GitHub dans Paramètres', 'error'); return null; }
+
+  toast('⬆ Upload du fichier en cours...', 'success');
+
+  // 1. Cherche ou crée une release "apphub-files"
+  let releaseId = null;
+  let uploadURL = null;
+
+  // Cherche la release existante
+  const listRes = await fetch(`https://api.github.com/repos/${config.repo}/releases`, {
+    headers: { Authorization: `token ${config.token}`, Accept: 'application/vnd.github.v3+json' }
+  });
+  const releases = await listRes.json();
+  const existing = Array.isArray(releases) ? releases.find(r => r.tag_name === 'apphub-files') : null;
+
+  if (existing) {
+    releaseId = existing.id;
+    uploadURL = existing.upload_url.replace('{?name,label}', '');
+  } else {
+    // Crée la release
+    const createRes = await fetch(`https://api.github.com/repos/${config.repo}/releases`, {
+      method: 'POST',
+      headers: { Authorization: `token ${config.token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tag_name: 'apphub-files', name: 'AppHub Files', body: 'Fichiers distribués par AppHub', draft: false, prerelease: false })
+    });
+    const created = await createRes.json();
+    releaseId = created.id;
+    uploadURL = created.upload_url.replace('{?name,label}', '');
+  }
+
+  // 2. Supprime l'ancien asset si même nom
+  if (releaseId) {
+    const assetsRes = await fetch(`https://api.github.com/repos/${config.repo}/releases/${releaseId}/assets`, {
+      headers: { Authorization: `token ${config.token}`, Accept: 'application/vnd.github.v3+json' }
+    });
+    const assets = await assetsRes.json();
+    const old = Array.isArray(assets) ? assets.find(a => a.name === file.name) : null;
+    if (old) {
+      await fetch(`https://api.github.com/repos/${config.repo}/releases/assets/${old.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `token ${config.token}` }
+      });
+    }
+  }
+
+  // 3. Upload le fichier
+  const uploadRes = await fetch(`${uploadURL}?name=${encodeURIComponent(file.name)}`, {
+    method: 'POST',
+    headers: { Authorization: `token ${config.token}`, 'Content-Type': file.type || 'application/octet-stream' },
+    body: file
+  });
+
+  if (uploadRes.ok) {
+    const asset = await uploadRes.json();
+    toast(`✓ Fichier uploadé sur GitHub Releases !`, 'success');
+    return asset.browser_download_url;
+  } else {
+    toast('Erreur upload GitHub Releases', 'error');
+    return null;
+  }
+}
+
+// ══════════════════════════════════════════
 // APPS
 // ══════════════════════════════════════════
-function addApp() {
+async function addApp() {
   const name = document.getElementById('app-name').value.trim();
   const desc = document.getElementById('app-desc').value.trim();
   const version = document.getElementById('app-version').value.trim() || '1.0.0';
   const category = document.getElementById('app-category').value;
   const notes = document.getElementById('app-notes').value.trim();
   if (!name) { toast('Entrez un nom pour l\'app', 'error'); return; }
+
+  let fileName = null;
+  let downloadURL = null;
+
+  // Upload du fichier vers GitHub Releases si un fichier est sélectionné
+  if (state.selectedFile) {
+    downloadURL = await uploadToRelease(state.selectedFile);
+    if (!downloadURL) return; // Échec upload
+    fileName = state.selectedFile.name;
+  }
 
   const app = {
     id: 'app_' + Date.now(),
@@ -833,11 +910,12 @@ function addApp() {
     downloads: 0,
     codes: 0,
     created: new Date().toLocaleDateString('fr-FR'),
-    fileName: state.selectedFile?.name || null
+    fileName,
+    downloadURL  // URL directe GitHub Releases
   };
 
   state.apps.push(app);
-  state.versions.push({ id: 'v_' + Date.now(), appId: app.id, version, notes, date: app.created, fileName: app.fileName });
+  state.versions.push({ id: 'v_' + Date.now(), appId: app.id, version, notes, date: app.created, fileName });
   saveState();
   closeModal('add-app');
   addActivity(`App "${name}" v${version} publiée`, 'var(--green)');
@@ -863,13 +941,26 @@ function openUpdateModal(appId) {
   openModal('add-version');
 }
 
-function publishVersion() {
+async function publishVersion() {
   const appId = document.getElementById('version-app').value;
   const version = document.getElementById('version-number').value.trim();
   const notes = document.getElementById('version-notes').value.trim();
   if (!appId || !version) { toast('Sélectionner une app et entrer un numéro de version', 'error'); return; }
+
+  let fileName = null;
+  let downloadURL = null;
+
+  if (state.selectedVersionFile) {
+    downloadURL = await uploadToRelease(state.selectedVersionFile);
+    if (!downloadURL) return;
+    fileName = state.selectedVersionFile.name;
+  }
+
   const app = state.apps.find(a => a.id === appId);
-  if (app) app.version = version;
+  if (app) {
+    app.version = version;
+    if (downloadURL) { app.downloadURL = downloadURL; app.fileName = fileName; }
+  }
   state.versions.push({ id: 'v_' + Date.now(), appId, version, notes, date: new Date().toLocaleDateString('fr-FR') });
   saveState();
   closeModal('add-version');
